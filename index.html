@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Messenger</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#2b2d31;
+  color:white;
+  height:100vh;
+  display:flex;
+  overflow:hidden;
+}
+
+/* ---------- LOGIN ---------- */
+#login {
+  margin:auto;
+  background:#1e1f22;
+  padding:30px;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  width:300px;
+}
+
+#login input {
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#383a40;
+  color:white;
+}
+
+#login button {
+  padding:10px;
+  background:#5865f2;
+  border:none;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+}
+
+#switchMode {
+  font-size:13px;
+  color:#b5bac1;
+  cursor:pointer;
+  text-align:center;
+}
+
+/* ---------- APP ---------- */
+#app {
+  display:none;
+  flex:1;
+}
+
+/* ---------- SIDEBAR ---------- */
+#sidebar {
+  width:260px;
+  background:#1e1f22;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+
+#friendsBtn {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  border:1px solid #3f4147;
+}
+
+#friendsBtn:hover { background:#313338; }
+#friendsBtn.active { background:#404249; }
+
+#online { margin-top:10px; }
+
+.user {
+  padding:6px;
+  border-radius:6px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+}
+
+.user:hover { background:#313338; }
+.user.active { background:#404249; }
+
+/* ---------- UNREAD BADGE ---------- */
+.user .unread {
+  position:absolute;
+  right:8px;
+  top:50%;
+  transform:translateY(-50%);
+  background:#f04747;
+  color:white;
+  font-size:12px;
+  padding:2px 6px;
+  border-radius:12px;
+  font-weight:bold;
+}
+
+/* ---------- AVATAR ---------- */
+.avatar {
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  color:white;
+  user-select:none;
+  flex-shrink:0;
+}
+
+/* ---------- CHAT ---------- */
+#chat {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+#emptyChat {
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#b5bac1;
+  text-align:center;
+}
+
+#messages {
+  flex:1;
+  padding:10px;
+  overflow-y:auto;
+  display:none;
+}
+
+.message {
+  display:flex;
+  gap:10px;
+  margin-bottom:6px;
+}
+
+.messageContent {
+  background:#313338;
+  padding:8px;
+  border-radius:8px;
+}
+
+#input {
+  display:flex;
+  border-top:1px solid #333;
+}
+
+#input input {
+  flex:1;
+  padding:10px;
+  background:#383a40;
+  border:none;
+  color:white;
+}
+
+#input button {
+  padding:0 20px;
+  background:#5865f2;
+  border:none;
+  color:white;
+  cursor:pointer;
+}
+
+/* ---------- FRIEND PANEL ---------- */
+#friendsPanel {
+  width:360px;
+  background:#1e1f22;
+  padding:12px;
+  position:fixed;
+  right:0;
+  top:0;
+  height:100%;
+  transform:translateX(100%);
+  transition:0.3s;
+}
+
+#friendsPanel.open { transform:translateX(0); }
+
+.friendSection {
+  background:#2b2d31;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.friendSection h3 {
+  margin:0 0 10px;
+  font-size:14px;
+  color:#b5bac1;
+}
+
+.addFriendInput {
+  width:100%;
+  padding:10px;
+  background:#1e1f22;
+  border:1px solid #5865f2;
+  border-radius:6px;
+  color:white;
+}
+
+.addFriendBtn {
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  background:#5865f2;
+  border:none;
+  border-radius:8px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.friendEntry {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#1e1f22;
+  padding:8px;
+  border-radius:8px;
+  margin-bottom:6px;
+  gap:10px;
+}
+
+.friendEntry span { display:flex; gap:8px; }
+.friendEntry button {
+  background:none;
+  border:none;
+  color:#5865f2;
+  cursor:pointer;
+  font-size:16px;
+}
+
+.emptyText {
+  color:#8e9297;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN / REGISTER -->
+<div id="login">
+  <h2 id="loginTitle">Вход</h2>
+  <input id="loginInput" placeholder="Логин">
+  <input id="passwordInput" type="password" placeholder="Пароль">
+  <button id="loginBtn">Войти</button>
+  <div id="switchMode">Нет аккаунта? Зарегистрироваться</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="sidebar">
+    <div id="friendsBtn">👥 Друзья</div>
+    <div id="online"></div>
+
+    <!-- PROFILE -->
+    <div style="margin-top:auto;padding:10px;border-top:1px solid #333">
+      <b id="profileNick"></b><br>
+      <span style="font-size:12px;color:#b5bac1">
+        Логин: <span id="profileLogin"></span>
+      </span>
+    </div>
+  </div>
+
+  <div id="chat">
+    <div id="emptyChat">
+      <div>
+        <h2>Нет активного диалога</h2>
+        <p>Добавьте друга или выберите пользователя</p>
+      </div>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="input">
+      <input id="text" placeholder="Сообщение...">
+      <button id="sendBtn">▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- FRIEND PANEL -->
+<div id="friendsPanel">
+  <div class="friendSection">
+    <h3>Добавить друга (по логину)</h3>
+    <input id="friendNick" class="addFriendInput" placeholder="Логин пользователя">
+    <button class="addFriendBtn" id="addFriendBtn">Отправить заявку</button>
+  </div>
+
+  <div class="friendSection">
+    <h3>Заявки</h3>
+    <div id="requests" class="emptyText">Нет входящих заявок</div>
+  </div>
+
+  <div class="friendSection">
+    <h3>Друзья</h3>
+    <div id="friends" class="emptyText">Список друзей пуст</div>
+  </div>
+</div>
+
+<script>
+/* ---------- DOM ---------- */
+const loginDiv = document.getElementById('login');
+const appDiv = document.getElementById('app');
+
+const loginTitle = document.getElementById('loginTitle');
+const loginInput = document.getElementById('loginInput');
+const passwordInput = document.getElementById('passwordInput');
+const loginBtn = document.getElementById('loginBtn');
+const switchMode = document.getElementById('switchMode');
+
+const online = document.getElementById('online');
+const profileNick = document.getElementById('profileNick');
+const profileLogin = document.getElementById('profileLogin');
+
+const emptyChat = document.getElementById('emptyChat');
+const messages = document.getElementById('messages');
+const text = document.getElementById('text');
+const sendBtn = document.getElementById('sendBtn');
+
+const friendsBtn = document.getElementById('friendsBtn');
+const friendsPanel = document.getElementById('friendsPanel');
+const friendNick = document.getElementById('friendNick');
+const addFriendBtn = document.getElementById('addFriendBtn');
+
+const requestsDiv = document.getElementById('requests');
+const friendsDiv = document.getElementById('friends');
+
+/* ---------- STATE ---------- */
+let ws;
+let isRegister = false;
+let login, nickname;
+let currentDM = null;
+let chats = {}, requests = [], friends = [];
+let unread = {}; // { login: count }
+
+/* ---------- AVATAR ---------- */
+function createAvatar(user) {
+  const a = document.createElement('div');
+  a.className = 'avatar';
+  a.textContent = user.letter;
+  a.style.background = user.color;
+  return a;
+}
+
+/* ---------- LOGIN / REGISTER ---------- */
+switchMode.onclick = () => {
+  isRegister = !isRegister;
+  loginTitle.textContent = isRegister ? 'Регистрация' : 'Вход';
+  loginBtn.textContent = isRegister ? 'Создать аккаунт' : 'Войти';
+  switchMode.textContent = isRegister
+    ? 'Уже есть аккаунт? Войти'
+    : 'Нет аккаунта? Зарегистрироваться';
+};
+
+loginBtn.onclick = () => {
+  const l = loginInput.value.trim();
+  const p = passwordInput.value.trim();
+  if (!l || !p) return;
+
+  ws = new WebSocket(`ws://${location.host}`);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      type: isRegister ? 'register' : 'login',
+      login: l,
+      password: p
+    }));
+  };
+
+  ws.onmessage = e => handle(JSON.parse(e.data));
+};
+
+/* ---------- WS ---------- */
+function handle(d) {
+  if (d.type === 'error') alert(d.message);
+
+  if (d.type === 'register_ok') {
+    alert('Аккаунт создан, войдите');
+    switchMode.onclick();
+  }
+
+  if (d.type === 'login_ok') {
+    login = d.login;
+    nickname = d.nickname;
+
+    loginDiv.style.display = 'none';
+    appDiv.style.display = 'flex';
+
+    profileNick.textContent = nickname;
+    profileLogin.textContent = login;
+  }
+
+  if (d.type === 'online_friends') {
+    online.innerHTML = '';
+    d.users.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'user';
+      div.appendChild(createAvatar(u));
+      div.appendChild(document.createTextNode(u.nickname));
+
+      if (unread[u.login]) {
+        const b = document.createElement('div');
+        b.className = 'unread';
+        b.textContent = unread[u.login];
+        div.appendChild(b);
+      }
+
+      div.onclick = () => openDM(u.login, u.nickname);
+      online.appendChild(div);
+    });
+  }
+
+  if (d.type === 'message') {
+    const peer = d.from === login ? d.to : d.from;
+    chats[peer] ??= [];
+    chats[peer].push(d);
+
+    // Увеличение счётчика непрочитанных если чат не открыт
+    if (peer !== currentDM) {
+      unread[peer] = d.unread;
+    } else {
+      unread[peer] = 0;
+    }
+
+    if (peer === currentDM) show(d.from, d.text, d.avatar);
+    renderOnline();
+  }
+
+  if (d.type === 'friend_request') {
+    requests.push(d.from);
+    renderRequests();
+  }
+
+  if (d.type === 'friend_accept') {
+    friends.push(d.from);
+    renderFriends();
+  }
+}
+
+/* ---------- CHAT ---------- */
+function openDM(l, n) {
+  currentDM = l;
+  emptyChat.style.display = 'none';
+  messages.style.display = 'block';
+  messages.innerHTML = '';
+  unread[l] = 0;
+  ws.send(JSON.stringify({ type: 'read', from: l }));
+  (chats[l] || []).forEach(m => show(m.from, m.text, m.avatar));
+  renderOnline();
+}
+
+function show(f, t, avatar) {
+  const m = document.createElement('div');
+  m.className = 'message';
+  m.appendChild(createAvatar(avatar));
+  const c = document.createElement('div');
+  c.className = 'messageContent';
+  c.innerHTML = `<b>${f}</b><br>${t}`;
+  m.appendChild(c);
+  messages.appendChild(m);
+}
+
+sendBtn.onclick = () => {
+  if (!text.value || !currentDM) return;
+  ws.send(JSON.stringify({ type:'message', from:login, to:currentDM, text:text.value }));
+  text.value = '';
+};
+
+/* ---------- FRIENDS ---------- */
+friendsBtn.onclick = () => {
+  friendsPanel.classList.toggle('open');
+  friendsBtn.classList.toggle('active');
+};
+
+addFriendBtn.onclick = () => {
+  const to = friendNick.value.trim();
+  if (!to) return;
+  ws.send(JSON.stringify({ type:'friend_request', from:login, to }));
+  friendNick.value = '';
+};
+
+function renderRequests() {
+  requestsDiv.innerHTML = '';
+  requests.forEach(u => {
+    const d = document.createElement('div');
+    d.className = 'friendEntry';
+    d.appendChild(createAvatar({ letter:u[0].toUpperCase(), color:'#5865f2' }));
+    d.appendChild(document.createTextNode(u));
+    const s = document.createElement('span');
+    s.innerHTML = `<button onclick="accept('${u}')">✔</button>
+                   <button onclick="decline('${u}')">✖</button>`;
+    d.appendChild(s);
+    requestsDiv.appendChild(d);
+  });
+}
+
+function renderFriends() {
+  friendsDiv.innerHTML = '';
+  friends.forEach(u => {
+    const d = document.createElement('div');
+    d.className = 'friendEntry';
+    d.appendChild(createAvatar({ letter:u[0].toUpperCase(), color:'#5865f2' }));
+    d.appendChild(document.createTextNode(u));
+    friendsDiv.appendChild(d);
+  });
+}
+
+/* ---------- ONLINE RENDER WITH UNREAD ---------- */
+function renderOnline() {
+  const divs = online.querySelectorAll('.user');
+  divs.forEach(d => {
+    const login = d.textContent;
+    const badge = d.querySelector('.unread');
+    if (unread[login] > 0) {
+      if (!badge) {
+        const b = document.createElement('div');
+        b.className = 'unread';
+        b.textContent = unread[login];
+        d.appendChild(b);
+      } else {
+        badge.textContent = unread[login];
+      }
+    } else {
+      if (badge) badge.remove();
+    }
+  });
+}
+
+function accept(u) {
+  ws.send(JSON.stringify({ type:'friend_accept', from:login, to:u }));
+  requests = requests.filter(r => r !== u);
+  friends.push(u);
+  renderRequests();
+  renderFriends();
+}
+
+function decline(u) {
+  requests = requests.filter(r => r !== u);
+  renderRequests();
+}
+</script>
+
+</body>
+</html>
